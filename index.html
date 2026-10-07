@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#1b2130">
+  <title>Entwirren</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+</head>
+<body>
+<div id="app">
+  <div id="stage"></div>
+
+  <header id="hud">
+    <button id="btnMenu" class="icon" aria-label="Menü">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="hud-title"><span id="hudLevel">Level 1</span><span id="hudSub">Grundlagen</span></div>
+    <div class="hud-stats">
+      <div class="stat"><b id="hudMoves">0</b><small>Züge</small></div>
+      <div class="stat par"><b id="hudPar">1</b><small>Optimum</small></div>
+      <div class="stat x" id="statX"><b id="hudX">0</b><small>Kreuzungen</small></div>
+    </div>
+  </header>
+
+  <footer id="bar">
+    <button id="btnUndo" title="Rückgängig (Strg+Z)">
+      <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span>Zurück</span>
+    </button>
+    <button id="btnRestart" title="Neu starten (R)">
+      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Neustart</span>
+    </button>
+    <button id="btnHint" title="Tipp (H)">
+      <svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg><span>Tipp</span>
+    </button>
+    <button id="btnHelp" title="Anleitung">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg><span>Regeln</span>
+    </button>
+  </footer>
+
+  <div id="toast" role="status"></div>
+
+  <!-- Hauptmenü -->
+  <section id="screenMenu" class="screen">
+    <div class="panel menu">
+      <div class="logo">
+        <svg viewBox="0 0 220 70" aria-hidden="true">
+          <path d="M10 55 C 60 -10, 110 80, 210 15" stroke="#e63946" />
+          <path d="M10 15 C 70 80, 140 -5, 210 55" stroke="#3a86ff" />
+          <path d="M10 35 C 60 35, 150 35, 210 35" stroke="#fcbf49" />
+        </svg>
+        <h1>Entwirren</h1>
+        <p class="tag">Das Kabelsalat-Puzzle</p>
+      </div>
+      <button id="mResume" class="btn ghost">Zurück zum Spiel</button>
+      <button id="mPlay" class="btn primary">Spielen</button>
+      <button id="mLevels" class="btn">Levelauswahl</button>
+      <button id="mRandom" class="btn">Zufallsrätsel</button>
+      <div class="row">
+        <button id="mHelp" class="btn small">Regeln</button>
+        <button id="mSound" class="btn small">Ton: an</button>
+      </div>
+      <p id="mProgress" class="muted"></p>
+    </div>
+  </section>
+
+  <!-- Levelauswahl -->
+  <section id="screenLevels" class="screen">
+    <div class="panel wide">
+      <div class="panel-head">
+        <button class="btn small" data-back="screenMenu">‹ Zurück</button>
+        <h2>Levelauswahl</h2>
+      </div>
+      <p id="lvProgress" class="muted"></p>
+      <div id="levelGrid"></div>
+    </div>
+  </section>
+
+  <!-- Zufall -->
+  <section id="screenRandom" class="screen">
+    <div class="panel">
+      <div class="panel-head">
+        <button class="btn small" data-back="screenMenu">‹ Zurück</button>
+        <h2>Zufallsrätsel</h2>
+      </div>
+      <p class="muted">Ein frisch verknotetes Brett – das Optimum wird live berechnet.</p>
+      <button class="btn" data-random="leicht">Leicht <small>4 Schläuche</small></button>
+      <button class="btn" data-random="mittel">Mittel <small>6 Schläuche · Säule · Schraube</small></button>
+      <button class="btn" data-random="schwer">Schwer <small>8 Schläuche</small></button>
+      <button class="btn" data-random="meister">Meister <small>10 Schläuche</small></button>
+    </div>
+  </section>
+
+  <!-- Regeln -->
+  <section id="screenHelp" class="screen">
+    <div class="panel">
+      <div class="panel-head">
+        <button class="btn small" data-back="screenMenu">‹ Menü</button>
+        <h2>So geht’s</h2>
+      </div>
+      <ul class="rules">
+        <li><b>Ziel:</b> Kein Schlauch darf einen anderen kreuzen.</li>
+        <li><b>Zug:</b> Stecker anfassen und auf ein freies Loch ziehen – oder Stecker antippen, dann Loch antippen.</li>
+        <li>Ein angehobener Schlauch landet immer <b>obenauf</b>.</li>
+        <li>Ein Schlauch darf auch nicht über einen <b>fremden Stecker</b> oder eine <b>Säule</b> laufen.</li>
+        <li><b>Festgeschraubte</b> Stecker (Stahlkappe, Schrauben) bewegen sich nicht.</li>
+        <li>Rote <b>Kreuze</b> zeigen jede Verhedderung, die Leuchte am Stecker zeigt: <span class="ledg">grün = frei</span>, <span class="ledr">rot = verheddert</span>.</li>
+        <li><b>Optimum</b> = die kleinstmögliche Zugzahl (vom Computer berechnet). Wer sie schafft, bekommt drei Sterne.</li>
+      </ul>
+      <p class="muted">Tasten: Strg+Z zurück · R neu · H Tipp · Esc Menü</p>
+      <button class="btn primary" data-back="">Los geht’s</button>
+    </div>
+  </section>
+
+  <!-- Gewonnen -->
+  <div id="winModal" class="modal">
+    <div class="panel win">
+      <div id="wStars" class="stars"></div>
+      <h2 id="wTitle">Entwirrt!</h2>
+      <p id="wText"></p>
+      <button id="wNext" class="btn primary">Nächstes Level</button>
+      <div class="row">
+        <button id="wRetry" class="btn small">Nochmal</button>
+        <button id="wMenu" class="btn small">Menü</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="modal"><div class="spinner"></div><p>Schläuche werden verknotet …</p></div>
+
+  <div id="fatal" class="modal"><div class="panel"><h2>3D-Grafik nicht verfügbar</h2><p>Dein Browser konnte WebGL nicht starten.</p><p id="fatalMsg" class="muted"></p></div></div>
+</div>
+
+<script src="js/logic.js"></script>
+<script src="js/levels.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
